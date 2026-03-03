@@ -1,0 +1,16 @@
+{
+  "name": "linko",
+  "version": "1.2.0",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "nanoid": "^5.1.0",
+    "qrcode": "^1.5.3",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7"
+  }
+}

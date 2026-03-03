@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Linko | Smart URL Shortener</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 Linko</h1>
+        <div class="input-stack">
+            <input type="text" id="longUrl" placeholder="Paste your long link here...">
+            <input type="text" id="customAlias" placeholder="Custom alias (optional)">
+            <label class="check-container">
+                <input type="checkbox" id="expires"> Expire in 24 hours
+            </label>
+            <button onclick="shorten()">Shorten Link</button>
+        </div>
+        <div id="newResult"></div>
+    </div>
+
+    <div id="stats-section">
+        <h3>Analytics Dashboard</h3>
+        <div id="linkList"></div>
+    </div>
+
+    <script>
+        window.onload = fetchLinks;
+
+        async function shorten() {
+            const longUrl = document.getElementById('longUrl').value;
+            const customAlias = document.getElementById('customAlias').value;
+            const expires = document.getElementById('expires').checked;
+
+            const res = await fetch('/shorten', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ longUrl, customAlias, expires })
+            });
+            const data = await res.json();
+            
+            if(data.error) return alert(data.error);
+
+            document.getElementById('newResult').innerHTML = `
+                <div class="success-box">
+                    <p>Link Ready: <a href="${data.shortUrl}" target="_blank">${data.shortUrl}</a></p>
+                    <img src="${data.qrCode}" width="120">
+                    <br>
+                    <button class="copy-btn" onclick="navigator.clipboard.writeText('${data.shortUrl}')">Copy Link</button>
+                </div>
+            `;
+            document.getElementById('longUrl').value = '';
+            document.getElementById('customAlias').value = '';
+            fetchLinks();
+        }
+
+        async function fetchLinks() {
+            const res = await fetch('/api/links');
+            const links = await res.json();
+            document.getElementById('linkList').innerHTML = links.map(l => {
+                const isExpired = l.expires_at && new Date() > new Date(l.expires_at);
+                return `
+                <div class="link-card ${isExpired ? 'expired' : ''}">
+                    <img src="${l.qrCode}" class="mini-qr">
+                    <div class="link-info">
+                        <strong>/${l.short_code}</strong>
+                        <small>Clicks: ${l.clicks} | Last: ${l.last_clicked ? new Date(l.last_clicked).toLocaleTimeString() : 'Never'}</small>
+                        ${isExpired ? '<span class="expiry-tag">EXPIRED</span>' : ''}
+                    </div>
+                    <button class="del-btn" onclick="deleteLink('${l.short_code}')">🗑️</button>
+                </div>
+            `}).join('');
+        }
+
+        async function deleteLink(code) {
+            if(confirm("Delete this link?")) {
+                await fetch(`/api/links/${code}`, { method: 'DELETE' });
+                fetchLinks();
+            }
+        }
+    </script>
+</body>
+</html>
