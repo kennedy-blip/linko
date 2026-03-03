@@ -1,9 +1,20 @@
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
+import fs from 'fs';
+import path from 'path';
 
 export async function setupDb() {
+    const dbDir = './data';
+    
+    // Create directory if it doesn't exist (Fixes Render SQLITE_CANTOPEN error)
+    if (!fs.existsSync(dbDir)) {
+        fs.mkdirSync(dbDir, { recursive: true });
+    }
+
+    const dbPath = path.join(dbDir, 'links.db');
+
     const db = await open({
-        filename: './data/links.db',
+        filename: dbPath,
         driver: sqlite3.Database
     });
 
